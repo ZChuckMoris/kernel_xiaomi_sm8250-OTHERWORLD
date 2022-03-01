@@ -33,7 +33,6 @@ source "fs/ocfs2/Kconfig"
 source "fs/btrfs/Kconfig"
 source "fs/nilfs2/Kconfig"
 source "fs/f2fs/Kconfig"
-
 config FS_DAX
 	bool "Direct Access (DAX) support"
 	depends on MMU
@@ -136,6 +135,7 @@ if BLOCK
 menu "DOS/FAT/NT Filesystems"
 
 source "fs/fat/Kconfig"
+source "fs/exfat/Kconfig"
 source "fs/ntfs/Kconfig"
 
 endmenu
@@ -318,5 +318,9 @@ endif # NETWORK_FILESYSTEMS
 source "fs/nls/Kconfig"
 source "fs/dlm/Kconfig"
 source "fs/unicode/Kconfig"
+
+config FS_HPB
+	bool "Support HPB on Filesystem"
+	default n
 
 endmenu

@@ -106,7 +106,8 @@ struct drm_driver {
 	 * promoted to userspace as the result of the open() system call.
 	 */
 	int (*open) (struct drm_device *, struct drm_file *);
-
+	int (*gem_prime_get_uuid)(struct drm_gem_object *obj,
+				  uuid_t *uuid);
 	/**
 	 * @postclose:
 	 *
