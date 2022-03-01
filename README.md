@@ -1,6 +1,6 @@
 # otherworld_miui
 
-Kernel for MI10T based on spaceboy sources
+Kernel for MI10T based on spaceboy sources for MIUI
 
 ## Getting started
 
