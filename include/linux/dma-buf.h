@@ -89,6 +89,7 @@ struct dma_buf_ops {
 	 *
 	 * This callback is optional.
 	 */
+	int (*get_uuid)(struct dma_buf *dmabuf, uuid_t *uuid);
 	void (*detach)(struct dma_buf *, struct dma_buf_attachment *);
 
 	/**

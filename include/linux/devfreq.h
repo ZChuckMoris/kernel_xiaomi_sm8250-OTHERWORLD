@@ -156,7 +156,8 @@ struct devfreq {
 	char governor_name[DEVFREQ_NAME_LEN];
 	struct notifier_block nb;
 	struct delayed_work work;
-
+	bool is_boost_device;
+	bool max_boost;
 	unsigned long previous_freq;
 	struct devfreq_dev_status last_status;
 
@@ -177,6 +178,14 @@ struct devfreq {
 	struct srcu_notifier_head transition_notifier_list;
 	bool dev_suspended;
 };
+
+/**
+ * update_devfreq() - Reevaluate the device and configure frequency
+ * @devfreq:	the devfreq device
+ *
+ * Note: devfreq->lock must be held
+ */
+extern int update_devfreq(struct devfreq *devfreq);
 
 struct devfreq_freqs {
 	unsigned long old;

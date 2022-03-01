@@ -79,6 +79,31 @@ struct ipv6_devconf {
 	struct ctl_table_header *sysctl_header;
 };
 
+/*struct inet6_skb_parm {
+	int			iif;
+	__be16			ra;
+	__u16			dst0;
+	__u16			srcrt;
+	__u16			dst1;
+	__u16			lastopt;
+	__u16			nhoff;
+	__u16			flags;
+#if defined(CONFIG_IPV6_MIP6) || defined(CONFIG_IPV6_MIP6_MODULE)
+	__u16			dsthao;
+#endif
+	__u16			frag_max_size;
+
+#define IP6SKB_XFRM_TRANSFORMED	1
+#define IP6SKB_FORWARDED	2
+#define IP6SKB_REROUTED		4
+#define IP6SKB_ROUTERALERT	8
+#define IP6SKB_FRAGMENTED      16
+#define IP6SKB_HOPBYHOP        32
+#define IP6SKB_L3SLAVE         64
+#define IP6SKB_JUMBOGRAM      128
+};*/
+
+
 struct ipv6_params {
 	__s32 disable_ipv6;
 	__s32 autoconf;

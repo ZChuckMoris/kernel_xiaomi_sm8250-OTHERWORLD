@@ -39,6 +39,7 @@ struct sock_reuseport;
  * calls in BPF_CALL instruction.
  */
 #define BPF_REG_ARG1	BPF_REG_1
+#define BPF_NOSPEC	0xc0
 #define BPF_REG_ARG2	BPF_REG_2
 #define BPF_REG_ARG3	BPF_REG_3
 #define BPF_REG_ARG4	BPF_REG_4
