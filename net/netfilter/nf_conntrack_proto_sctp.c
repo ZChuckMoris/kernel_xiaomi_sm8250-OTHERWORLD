@@ -287,6 +287,7 @@ static int sctp_packet(struct nf_conn *ct,
 	struct sctp_chunkhdr _sch;
 	u_int32_t offset, count;
 	unsigned int *timeouts;
+        bool ignore;
 	unsigned long map[256 / sizeof(unsigned long)] = { 0 };
 
 	sh = skb_header_pointer(skb, dataoff, sizeof(_sctph), &_sctph);
