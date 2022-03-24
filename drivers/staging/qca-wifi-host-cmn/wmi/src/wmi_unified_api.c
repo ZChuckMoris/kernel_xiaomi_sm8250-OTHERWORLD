@@ -345,7 +345,7 @@ wmi_unified_wow_remove_wakeup_pattern_send(
 }
 
 QDF_STATUS wmi_unified_ap_ps_cmd_send(wmi_unified_t wmi_handle,
-				      uint8_t *peer_addr,
+				      uint8_t peer_addr[6],
 				      struct ap_ps_params *param)
 {
 	if (wmi_handle->ops->send_set_ap_ps_param_cmd)
@@ -1587,7 +1587,7 @@ bool wmi_service_enabled(wmi_unified_t wmi_handle, uint32_t service_id)
 				wmi_handle->services[service_id]);
 		}
 	} else {
-		WMI_LOGI("Service %d not supported", service_id);
+		wmi_info("Service %d not supported", service_id);
 	}
 
 	return false;
@@ -3120,6 +3120,16 @@ wmi_unified_extract_roam_11kv_stats(wmi_unified_t wmi, void *evt_buf,
 	if (wmi->ops->extract_roam_11kv_stats)
 		return wmi->ops->extract_roam_11kv_stats(wmi, evt_buf, dst, idx,
 							 rpt_idx);
+
+	return QDF_STATUS_E_FAILURE;
+}
+
+QDF_STATUS
+wmi_unified_extract_roam_msg_info(wmi_unified_t wmi, void *evt_buf,
+				   struct wmi_roam_msg_info *dst, uint8_t idx)
+{
+	if (wmi->ops->extract_roam_msg_info)
+		return wmi->ops->extract_roam_msg_info(wmi, evt_buf, dst, idx);
 
 	return QDF_STATUS_E_FAILURE;
 }

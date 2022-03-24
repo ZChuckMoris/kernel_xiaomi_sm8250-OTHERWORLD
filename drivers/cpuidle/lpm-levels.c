@@ -149,12 +149,6 @@ uint32_t register_system_pm_ops(struct system_pm_ops *pm_ops)
 	return 0;
 }
 
-/**
- * device type for disable lpm
- *   type     event    bitmap
- *   input      0x1      bit0
- *  FrontCAM    0x2      bit1
- **/
 #define EVENT_INPUT 0x1
 #define EVENT_FCAM  0x2
 #define EVENT_SUM   0x2
@@ -174,11 +168,13 @@ void lpm_disable_for_dev(bool on, char event_dev)
 		sleep_disabled_dev = !!on;
 	} else {
 		lpm_dev_bitmp &= ~mask;
-		if(lpm_dev_bitmp == 0)
+		if (lpm_dev_bitmp == 0)
 			sleep_disabled_dev = !!on;
 	}
 }
 EXPORT_SYMBOL(lpm_disable_for_dev);
+
+
 
 static uint32_t least_cluster_latency(struct lpm_cluster *cluster,
 					struct latency_level *lat_level)
@@ -738,7 +734,7 @@ static int cpu_power_select(struct cpuidle_device *dev,
 	uint32_t min_residency, max_residency;
 	struct power_params *pwr_params;
 
-	if (lpm_disallowed(sleep_us, dev->cpu, cpu) || sleep_disabled_dev)
+	if (lpm_disallowed(sleep_us, dev->cpu, cpu))
 		goto done_select;
 
 	idx_restrict = cpu->nlevels + 1;
@@ -1438,7 +1434,7 @@ static int lpm_cpuidle_select(struct cpuidle_driver *drv,
 	return cpu_power_select(dev, cpu);
 }
 
-void update_ipi_history(int cpu)
+static void update_ipi_history(int cpu)
 {
 	struct ipi_history *history = &per_cpu(cpu_ipi_history, cpu);
 	ktime_t now = ktime_get();
@@ -1754,7 +1750,7 @@ static void lpm_suspend_wake(void)
 	suspend_in_progress = false;
 	lpm_stats_suspend_exit();
 }
-extern void gpio_debug_print(void);
+
 static int lpm_suspend_enter(suspend_state_t state)
 {
 	int cpu = raw_smp_processor_id();
@@ -1784,7 +1780,7 @@ static int lpm_suspend_enter(suspend_state_t state)
 
 	cpu_prepare(lpm_cpu, idx, false);
 	cluster_prepare(cluster, cpumask, idx, false, 0);
-	gpio_debug_print();
+
 	success = psci_enter_sleep(lpm_cpu, idx, false);
 
 	cluster_unprepare(cluster, cpumask, idx, false, 0, success);
@@ -1874,6 +1870,8 @@ static int lpm_probe(struct platform_device *pdev)
 		pr_err("Failed to create cluster level nodes\n");
 		goto failed;
 	}
+
+	set_update_ipi_history_callback(update_ipi_history);
 
 	/* Add lpm_debug to Minidump*/
 	strlcpy(md_entry.name, "KLPMDEBUG", sizeof(md_entry.name));

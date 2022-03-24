@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2018-2020, The Linux Foundation. All rights reserved. */
+/* Copyright (c) 2018-2021, The Linux Foundation. All rights reserved. */
 
 #include <linux/debugfs.h>
 #include <linux/device.h>
@@ -113,8 +113,7 @@ static void mhi_reg_write_enqueue(struct mhi_controller *mhi_cntrl,
 
 	q_index = q_index & (REG_WRITE_QUEUE_LEN - 1);
 
-	MHI_ASSERT(mhi_cntrl->reg_write_q[q_index].valid, "queue full idx %d",
-			q_index);
+	MHI_ASSERT(mhi_cntrl->reg_write_q[q_index].valid, "queue full");
 
 	mhi_cntrl->reg_write_q[q_index].reg_addr = reg_addr;
 	mhi_cntrl->reg_write_q[q_index].val = val;
@@ -249,6 +248,7 @@ enum mhi_ee mhi_get_exec_env(struct mhi_controller *mhi_cntrl)
 
 	return (ret) ? MHI_EE_MAX : mhi_translate_dev_ee(mhi_cntrl, exec);
 }
+EXPORT_SYMBOL(mhi_get_exec_env);
 
 enum mhi_dev_state mhi_get_mhi_state(struct mhi_controller *mhi_cntrl)
 {
@@ -258,6 +258,7 @@ enum mhi_dev_state mhi_get_mhi_state(struct mhi_controller *mhi_cntrl)
 				     MHISTATUS_MHISTATE_SHIFT, &state);
 	return ret ? MHI_STATE_MAX : state;
 }
+EXPORT_SYMBOL(mhi_get_mhi_state);
 
 int mhi_queue_sclist(struct mhi_device *mhi_dev,
 		     struct mhi_chan *mhi_chan,
@@ -556,18 +557,6 @@ int mhi_queue_dma(struct mhi_device *mhi_dev,
 		mhi_tre->dword[0] =
 			MHI_RSCTRE_DATA_DWORD0(buf_ring->wp - buf_ring->base);
 		mhi_tre->dword[1] = MHI_RSCTRE_DATA_DWORD1;
-		/*
-		 * on RSC channel IPA HW has a minimum credit requirement before
-		 * switching to DB mode
-		 */
-		n_free_tre = mhi_get_no_free_descriptors(mhi_dev,
-				DMA_FROM_DEVICE);
-		n_queued_tre = tre_ring->elements - n_free_tre;
-		read_lock_bh(&mhi_chan->lock);
-		if (mhi_chan->db_cfg.db_mode &&
-				n_queued_tre < MHI_RSC_MIN_CREDITS)
-			ring_db = false;
-		read_unlock_bh(&mhi_chan->lock);
 	} else {
 		mhi_tre->ptr = MHI_TRE_DATA_PTR(buf_info->p_addr);
 		mhi_tre->dword[0] = MHI_TRE_DATA_DWORD0(buf_info->len);
@@ -585,11 +574,24 @@ int mhi_queue_dma(struct mhi_device *mhi_dev,
 	if (mhi_chan->dir == DMA_TO_DEVICE)
 		atomic_inc(&mhi_cntrl->pending_pkts);
 
-	if (likely(MHI_DB_ACCESS_VALID(mhi_cntrl)) && ring_db) {
-		read_lock_bh(&mhi_chan->lock);
-		mhi_ring_chan_db(mhi_cntrl, mhi_chan);
-		read_unlock_bh(&mhi_chan->lock);
+	read_lock_bh(&mhi_chan->lock);
+	if (mhi_chan->xfer_type == MHI_XFER_RSC_DMA) {
+		/*
+		 * on RSC channel IPA HW has a minimum credit requirement before
+		 * switching to DB mode
+		 */
+		n_free_tre = mhi_get_no_free_descriptors(mhi_dev,
+				DMA_FROM_DEVICE);
+		n_queued_tre = tre_ring->elements - n_free_tre;
+		if (mhi_chan->db_cfg.db_mode &&
+				n_queued_tre < MHI_RSC_MIN_CREDITS)
+			ring_db = false;
 	}
+
+	if (likely(MHI_DB_ACCESS_VALID(mhi_cntrl)) && ring_db)
+		mhi_ring_chan_db(mhi_cntrl, mhi_chan);
+
+	read_unlock_bh(&mhi_chan->lock);
 
 	read_unlock_bh(&mhi_cntrl->pm_lock);
 
@@ -1014,18 +1016,6 @@ static int parse_xfer_event(struct mhi_controller *mhi_cntrl,
 		MHI_VERB("DB_MODE chan %d.\n", mhi_chan->chan);
 		mhi_chan->db_cfg.db_mode = true;
 
-	        /*
-                * on RSC channel IPA HW has a minimum credit requirement before
-                * switching to DB mode
-                */
-                if (mhi_chan->xfer_type == MHI_XFER_RSC_DMA) {
-                    n_free_tre = mhi_get_no_free_descriptors(
-                    mhi_chan->mhi_dev, DMA_FROM_DEVICE);
-                    n_queued_tre = tre_ring->elements - n_free_tre;
-                    if (n_queued_tre < MHI_RSC_MIN_CREDITS)
-                        ring_db = false;
-                }
-
 		mhi_chan->mode_change++;
 
 		read_lock_irqsave(&mhi_cntrl->pm_lock, rflags);
@@ -1419,7 +1409,7 @@ int mhi_process_tsync_ev_ring(struct mhi_controller *mhi_cntrl,
 	sequence = MHI_TRE_GET_EV_TSYNC_SEQ(dev_rp);
 	remote_time = MHI_TRE_GET_EV_TIME(dev_rp);
 
-	MHI_VERB("Received TSYNC event with seq:0x%llx time:0x%llx\n",
+	MHI_VERB("Received TSYNC event with seq:0x%x time:0x%llx\n",
 		 sequence, remote_time);
 
 	read_lock_bh(&mhi_cntrl->pm_lock);
@@ -1431,8 +1421,7 @@ int mhi_process_tsync_ev_ring(struct mhi_controller *mhi_cntrl,
 	mutex_lock(&mhi_cntrl->tsync_mutex);
 
 	if (unlikely(mhi_tsync->int_sequence != sequence)) {
-		MHI_ASSERT(1, "Unexpected response:0x%llx Expected:0x%llx\n",
-			   sequence, mhi_tsync->int_sequence);
+		MHI_ASSERT(1, "Unexpected response");
 
 		mhi_device_put(mhi_cntrl->mhi_dev,
 			       MHI_VOTE_DEVICE | MHI_VOTE_BUS);
@@ -1485,9 +1474,6 @@ int mhi_process_bw_scale_ev_ring(struct mhi_controller *mhi_cntrl,
 		&mhi_cntrl->mhi_ctxt->er_ctxt[mhi_event->er_index];
 	struct mhi_link_info link_info, *cur_info = &mhi_cntrl->mhi_link_info;
 	int result, ret = 0;
-
-	if (mhi_cntrl->need_force_m3 && !mhi_cntrl->force_m3_done)
-		goto exit_bw_scale_process;
 
 	spin_lock_bh(&mhi_event->lock);
 	dev_rp = mhi_to_virtual(ev_ring, er_ctxt->rp);
@@ -1729,16 +1715,18 @@ irqreturn_t mhi_intvec_handlr(int irq_number, void *dev)
 
 	struct mhi_controller *mhi_cntrl = dev;
 	u32 in_reset = -1;
+	int ret = 0;
 
 	/* wake up any events waiting for state change */
 	MHI_VERB("Enter\n");
 	if (unlikely(mhi_cntrl->initiate_mhi_reset)) {
-		mhi_read_reg_field(mhi_cntrl, mhi_cntrl->regs, MHICTRL,
+		ret = mhi_read_reg_field(mhi_cntrl, mhi_cntrl->regs, MHICTRL,
 			MHICTRL_RESET_MASK, MHICTRL_RESET_SHIFT, &in_reset);
+
 		mhi_cntrl->initiate_mhi_reset = !!in_reset;
 	}
 	wake_up_all(&mhi_cntrl->state_event);
-	MHI_VERB("Exit\n");
+	MHI_VERB("Exit: ret %d\n", ret);
 
 	if (MHI_IN_MISSION_MODE(mhi_cntrl->ee))
 		queue_work(mhi_cntrl->wq, &mhi_cntrl->special_work);
@@ -2164,7 +2152,7 @@ int mhi_debugfs_mhi_regdump_show(struct seq_file *m, void *d)
 	enum mhi_dev_state state;
 	enum mhi_ee ee;
 	int i, ret;
-	u32 val;
+	u32 val = 0;
 	void __iomem *mhi_base = mhi_cntrl->regs;
 	void __iomem *bhi_base = mhi_cntrl->bhi;
 	void __iomem *bhie_base = mhi_cntrl->bhie;
@@ -2788,7 +2776,7 @@ int mhi_get_remote_time(struct mhi_device *mhi_dev,
 
 	mhi_cntrl->lpm_enable(mhi_cntrl, mhi_cntrl->priv_data);
 
-	MHI_VERB("time DB request with seq:0x%llx\n", mhi_tsync->int_sequence);
+	MHI_VERB("time DB request with seq:0x%x\n", mhi_tsync->int_sequence);
 
 	mhi_tsync->db_response_pending = true;
 	init_completion(&mhi_tsync->db_completion);
@@ -2817,7 +2805,7 @@ void mhi_debug_reg_dump(struct mhi_controller *mhi_cntrl)
 	enum mhi_dev_state state;
 	enum mhi_ee ee;
 	int i, ret;
-	u32 val;
+	u32 val = 0;
 	void __iomem *mhi_base = mhi_cntrl->regs;
 	void __iomem *bhi_base = mhi_cntrl->bhi;
 	void __iomem *bhie_base = mhi_cntrl->bhie;

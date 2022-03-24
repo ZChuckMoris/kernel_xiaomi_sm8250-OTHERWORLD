@@ -230,15 +230,34 @@ CDEFINES +=	-DANI_LITTLE_BYTE_ENDIAN \
 		-DANI_OS_TYPE_ANDROID=6 \
 		-DPTT_SOCK_SVC_ENABLE \
 		-Wall\
-		-Werror\
 		-D__linux__
 
-ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT),lmi lmiin lmiinpro))
+ifdef CONFIG_BOARD_ALIOTH
+CDEFINES += -DCONFIG_US_PROXIMITY
+endif
+
+ifdef CONFIG_BOARD_APOLLO
+CDEFINES += -DCONFIG_US_PROXIMITY
+endif
+
+ifdef CONFIG_BOARD_CAS
+CDEFINES += -DCONFIG_US_PROXIMITY
+endif
+
+ifdef CONFIG_BOARD_LMI
 CDEFINES += -DTFA_ADSP_SUPPORTED
 endif
 
-ifneq (,$(filter $(TARGET_PRODUCT), picasso picassoin))
-        CDEFINES += -DTFA_ADSP_SUPPORTED
+ifdef CONFIG_BOARD_THYME
+CDEFINES += -DCONFIG_US_PROXIMITY
+endif
+
+ifdef CONFIG_BOARD_PICASSO
+CDEFINES += -DTFA_ADSP_SUPPORTED
+endif
+
+ifdef CONFIG_BOARD_UMI
+CDEFINES += -DAUDIO_FORCE_RESTART_ADSP
 endif
 
 KBUILD_CPPFLAGS += $(CDEFINES)
@@ -271,8 +290,16 @@ ifeq ($(KERNEL_BUILD), 0)
 KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/ipc/Module.symvers
 endif
 
-ifeq ($(TARGET_PRODUCT), $(filter $(TARGET_PRODUCT),lmi lmiin lmiinpro cas umi cmi apollo alioth thyme))
+ifdef CONFIG_BOARD_XIAOMI_SM8250
 	CDEFINES += -DAUDIO_SM8250_FLAG
+endif
+
+ifdef CONFIG_BOARD_ENUMA
+    CDEFINES += -DCONFIG_TARGET_PRODUCT_ENUMA
+endif
+
+ifdef CONFIG_BOARD_ELISH
+    CDEFINES += -DCONFIG_TARGET_PRODUCT_ELISH
 endif
 
 ifeq ($(KERNEL_BUILD), 1)
@@ -296,6 +323,3 @@ q6_pdr_dlkm-y := $(QDSP6_PDR_OBJS)
 
 obj-$(CONFIG_MSM_QDSP6_NOTIFIER) += q6_notifier_dlkm.o
 q6_notifier_dlkm-y := $(QDSP6_NOTIFIER_OBJS)
-
-# inject some build related information
-DEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"

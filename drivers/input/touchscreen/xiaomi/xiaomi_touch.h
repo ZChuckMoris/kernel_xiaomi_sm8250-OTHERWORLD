@@ -21,51 +21,17 @@
 #include <linux/slab.h>
 #include <linux/input.h>
 
-
 #define MI_TAG  "[mi-touch]"
-
-/*Xiaomi Touch driver log level
-  *error    : 0
-  *info     : 1
-  *notice   : 2
-  *debug    : 3
-*/
-extern int mi_log_level;
-
-#define 	TOUCH_ERROR    0
-#define 	TOUCH_INFO     1
-#define 	TOUCH_NOTICE   2
-#define 	TOUCH_DEBUG    3
 
 #define XIAOMI_TOUCH_DEVICE_NAME "xiaomi-touch"
 #define KEY_INPUT_DEVICE_PHYS "xiaomi-touch/input0"
 /*Xiaomi Special Touch Event Code*/
 #define BTN_TAP 0x153
 
-#define MI_TOUCH_LOGD(level, fmt, args...) \
-do { \
-	if (mi_log_level == TOUCH_DEBUG && level == 1) \
-		pr_info(fmt, ##args); \
-} while (0)
-
-#define MI_TOUCH_LOGN(level, fmt, args...) \
-do { \
-	if (mi_log_level >= TOUCH_NOTICE && level == 1) \
-		pr_info(fmt, ##args); \
-} while (0)
-
-#define MI_TOUCH_LOGI(level, fmt, args...) \
-do { \
-	if (mi_log_level >= TOUCH_INFO && level == 1) \
-		pr_info(fmt, ##args); \
-} while (0)
-
-#define MI_TOUCH_LOGE(level, fmt, args...) \
-do { \
-	if (level == 1) \
-		pr_err(fmt, ##args); \
-} while (0)
-
+#define MI_TOUCH_LOGD(level, fmt, args...) ((void)0)
+#define MI_TOUCH_LOGN(level, fmt, args...) ((void)0)
+#define MI_TOUCH_LOGI(level, fmt, args...) ((void)0)
+#define MI_TOUCH_LOGE(level, fmt, args...) ((void)0)
 
 #define XIAOMI_ROI	1
 
@@ -104,8 +70,8 @@ enum MODE_TYPE {
 	Touch_Tolerance        = 3,
 #ifdef CONFIG_TOUCHSCREEN_SUPPORT_NEW_GAME_MODE
 	Touch_Aim_Sensitivity	= 4,
-	Touch_Tap_Stability		= 5,
-	Touch_Expert_Mode		= 6,
+	Touch_Tap_Stability	= 5,
+	Touch_Expert_Mode	= 6,
 #else
 	Touch_Wgh_Min          = 4,
 	Touch_Wgh_Max          = 5,
@@ -124,7 +90,8 @@ enum MODE_TYPE {
 	Touch_Nonui_Mode       = 17,
 	Touch_Debug_Level      = 18,
 	Touch_Power_Status     = 19,
-	Touch_Mode_NUM         = 20,
+	Touch_Pen_ENABLE       = 20,
+	Touch_Mode_NUM         = 21,
 };
 
 struct xiaomi_touch_interface {
@@ -142,6 +109,7 @@ struct xiaomi_touch_interface {
 	u8 (*panel_color_read)(void);
 	u8 (*panel_display_read)(void);
 	char (*touch_vendor_read)(void);
+	int (*get_touch_super_resolution_factor)(void);
 #if XIAOMI_ROI
 	int (*partial_diff_data_read)(struct xiaomi_diff_data *data);
 #endif
@@ -166,8 +134,6 @@ struct xiaomi_touch_pdata{
 	struct xiaomi_touch_interface *touch_data;
 	int palm_value;
 	bool palm_changed;
-	bool set_update;
-	bool bump_sample_rate;
 	int psensor_value;
 	bool psensor_changed;
 	const char *name;

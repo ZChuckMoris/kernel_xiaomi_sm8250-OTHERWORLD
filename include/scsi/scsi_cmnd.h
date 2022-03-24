@@ -12,6 +12,7 @@
 #include <scsi/scsi_device.h>
 #include <scsi/scsi_request.h>
 #include <linux/android_kabi.h>
+
 struct Scsi_Host;
 struct scsi_driver;
 

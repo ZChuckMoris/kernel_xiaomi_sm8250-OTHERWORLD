@@ -1,5 +1,6 @@
 /**
  * Elliptic Labs
+   Fixed proximity sensor, removed block_proximity calls for working fine the proximity sensor
  */
 
 #include <linux/slab.h>
@@ -16,8 +17,6 @@
 #include <dsp/apr_elliptic.h>
 #include <elliptic/elliptic_mixer_controls.h>
 #include <elliptic/elliptic_data_io.h>
-
-
 
 #ifndef min
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -383,7 +382,6 @@ static int32_t process_sensorhub_msg(uint32_t *payload, uint32_t payload_size)
 
 	return 0;
 }*/
-
 
 int32_t elliptic_process_apr_payload(uint32_t *payload)
 {

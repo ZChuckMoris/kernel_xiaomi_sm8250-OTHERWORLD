@@ -1,3 +1,4 @@
+
 /**
  * Mi
  */
@@ -143,7 +144,7 @@ static int afe_set_parameter(int port,
 	}
 	ret = wait_event_timeout(mius_afe.ptr_wait[index],
 		(atomic_read(mius_afe.ptr_state) == 0),
-		msecs_to_jiffies(mius_afe.timeout_ms*10));
+		msecs_to_jiffies(mius_afe.timeout_ms));
 	if (!ret) {
 		pr_err("%s: wait_event timeout\n", __func__);
 		ret = -EINVAL;
@@ -382,6 +383,7 @@ static int ups_event;
 				pr_info("Blocking %s from reading proximity sensor...", p->comm);
 				return 1;
 			}
+			break;
 		}
 	}
 
@@ -391,7 +393,8 @@ static int ups_event;
 int32_t mius_process_apr_payload(uint32_t *payload)
 {
 	uint32_t payload_size = 0;
-	int32_t  ret = -1;	
+	int32_t  ret = -1;
+
 	//if (payload[0] == MIUS_ULTRASOUND_MODULE_TX) {
 	if (true) {
 		/* payload format
@@ -430,14 +433,14 @@ int32_t mius_process_apr_payload(uint32_t *payload)
 			break;
 		case MIUS_ULTRASOUND_PARAM_ID_ENGINE_DATA:
 #endif
-			printk(KERN_DEBUG "[MIUS] mi us payload[3] = %d", (int)payload[3]);
+			pr_debug("[MIUS] mi us payload[3] = %d", (int)payload[3]);
 			if (payload[3] == 0 || payload[3] == 1) {
 				ups_event = payload[3];
 				ret = (int32_t)us_afe_callback((const uint32_t)payload[3]);
 			} else {
 
 				ups_event = ups_event ^ 1;
-				printk(KERN_DEBUG "[MIUS] >> change ups to %d", ups_event);
+				pr_debug("[MIUS] >> change ups to %d", ups_event);
 				ret = (int32_t)us_afe_callback((uint32_t)ups_event);
 			}
 

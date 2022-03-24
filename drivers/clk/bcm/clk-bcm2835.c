@@ -1293,7 +1293,7 @@ static struct clk_hw *bcm2835_register_pll(struct bcm2835_cprman *cprman,
 					   const struct bcm2835_pll_data *data)
 {
 	struct bcm2835_pll *pll;
-	struct clk_init_data init;
+	struct clk_init_data init = {};
 	int ret;
 
 	memset(&init, 0, sizeof(init));
@@ -1314,8 +1314,10 @@ static struct clk_hw *bcm2835_register_pll(struct bcm2835_cprman *cprman,
 	pll->hw.init = &init;
 
 	ret = devm_clk_hw_register(cprman->dev, &pll->hw);
-	if (ret)
+	if (ret) {
+		kfree(pll);
 		return NULL;
+	}
 	return &pll->hw;
 }
 
@@ -1324,7 +1326,7 @@ bcm2835_register_pll_divider(struct bcm2835_cprman *cprman,
 			     const struct bcm2835_pll_divider_data *data)
 {
 	struct bcm2835_pll_divider *divider;
-	struct clk_init_data init;
+	struct clk_init_data init = {};
 	const char *divider_name;
 	int ret;
 
@@ -1383,7 +1385,7 @@ static struct clk_hw *bcm2835_register_clock(struct bcm2835_cprman *cprman,
 					  const struct bcm2835_clock_data *data)
 {
 	struct bcm2835_clock *clock;
-	struct clk_init_data init;
+	struct clk_init_data init = {};
 	const char *parents[1 << CM_SRC_BITS];
 	size_t i;
 	int ret;
@@ -1442,13 +1444,13 @@ static struct clk_hw *bcm2835_register_clock(struct bcm2835_cprman *cprman,
 	return &clock->hw;
 }
 
-static struct clk *bcm2835_register_gate(struct bcm2835_cprman *cprman,
+static struct clk_hw *bcm2835_register_gate(struct bcm2835_cprman *cprman,
 					 const struct bcm2835_gate_data *data)
 {
-	return clk_register_gate(cprman->dev, data->name, data->parent,
-				 CLK_IGNORE_UNUSED | CLK_SET_RATE_GATE,
-				 cprman->regs + data->ctl_reg,
-				 CM_GATE_BIT, 0, &cprman->regs_lock);
+	return clk_hw_register_gate(cprman->dev, data->name, data->parent,
+				    CLK_IGNORE_UNUSED | CLK_SET_RATE_GATE,
+				    cprman->regs + data->ctl_reg,
+				    CM_GATE_BIT, 0, &cprman->regs_lock);
 }
 
 typedef struct clk_hw *(*bcm2835_clk_register)(struct bcm2835_cprman *cprman,
