@@ -21,11 +21,7 @@ CONFIG_THREAD_INFO_IN_TASK=y
 #
 CONFIG_INIT_ENV_ARG_LIMIT=32
 # CONFIG_COMPILE_TEST is not set
-<<<<<<< HEAD
-CONFIG_LOCALVERSION="-WildAngelKernel-v12-stable"
-=======
-CONFIG_LOCALVERSION="-WildAngelKernel-v10-stable"
->>>>>>> parent of 244e94ad62bc (Cpu throttle charging speed at 42c and other fixes)
+CONFIG_LOCALVERSION="-WildAngelKernel-v14-stable"
 CONFIG_LOCALVERSION_AUTO=y
 CONFIG_BUILD_SALT=""
 CONFIG_HAVE_KERNEL_GZIP=y
