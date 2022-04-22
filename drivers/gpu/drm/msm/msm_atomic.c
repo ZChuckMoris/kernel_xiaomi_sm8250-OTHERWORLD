@@ -18,7 +18,6 @@
 #include "msm_drv.h"
 #include "msm_gem.h"
 #include "msm_kms.h"
-
 static void msm_atomic_wait_for_commit_done(struct drm_device *dev,
 		struct drm_atomic_state *old_state)
 {
