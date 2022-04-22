@@ -156,6 +156,8 @@ struct devfreq {
 	char governor_name[DEVFREQ_NAME_LEN];
 	struct notifier_block nb;
 	struct delayed_work work;
+	unsigned long scaling_min_freq;
+	unsigned long scaling_max_freq;
 
 	unsigned long previous_freq;
 	struct devfreq_dev_status last_status;
@@ -200,6 +202,7 @@ extern void devm_devfreq_remove_device(struct device *dev,
 extern int devfreq_suspend_device(struct devfreq *devfreq);
 extern int devfreq_resume_device(struct devfreq *devfreq);
 
+extern int update_devfreq(struct devfreq *devfreq);
 /* Helper functions for devfreq user device driver with OPP. */
 extern struct dev_pm_opp *devfreq_recommended_opp(struct device *dev,
 					   unsigned long *freq, u32 flags);
