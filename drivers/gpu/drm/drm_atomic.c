@@ -30,7 +30,10 @@
 #include <drm/drm_atomic.h>
 #include <drm/drm_mode.h>
 #include <drm/drm_print.h>
+<<<<<<< HEAD
 #include <drm/drm_writeback.h>
+=======
+>>>>>>> parent of 8565da1ae1b7 (drm: Boost DDR bus upon running an atomic ioctl)
 #include <linux/sync_file.h>
 
 #include "drm_crtc_internal.h"
@@ -2597,7 +2600,11 @@ int drm_mode_atomic_ioctl(struct drm_device *dev,
 			(arg->flags & DRM_MODE_PAGE_FLIP_EVENT))
 		return -EINVAL;
 
+<<<<<<< HEAD
 	drm_modeset_acquire_init(&ctx, DRM_MODESET_ACQUIRE_INTERRUPTIBLE);
+=======
+	drm_modeset_acquire_init(&ctx, 0);
+>>>>>>> parent of 8565da1ae1b7 (drm: Boost DDR bus upon running an atomic ioctl)
 
 	state = drm_atomic_state_alloc(dev);
 	if (!state)
